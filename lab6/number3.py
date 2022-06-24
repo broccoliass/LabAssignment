@@ -1,28 +1,18 @@
 import socket
-import os
-from _thread import *
-import math
 import sys
+import math         
+from multiprocessing import Process
 
-ServerSideSocket = socket.socket()
-host = ''
-port = 2004
-ThreadCount = 0
+ok_message = '\nHTTP/1.0 200 OK\n\n'
+nok_message = '\nHTTP/1.0 404 NotFound\n\n'
 
 FORMAT = 'utf-8'
-
-try:
-    ServerSideSocket.bind((host, port))
-except socket.error as e:
-    print(str(e))
-print('Socket is listening..')
-ServerSideSocket.listen(5)
-
+SIZE = 2048
 
 # This Logarithmic function
 def log(x):
     return math.log(x)
-   
+
 # This Square Root function
 def sqrt(x):
     return math.sqrt(x)
@@ -31,8 +21,7 @@ def sqrt(x):
 def exp(x):
     return math.exp(x)
 
-
-def multi_threaded_client(connection):
+def start_process(s_sock):
     connection.send(str.encode('Server is working:'))
     while True:
 
@@ -40,55 +29,67 @@ def multi_threaded_client(connection):
             ("\n1.Logarithmic") +
             ("\n2.Square Root") +
             ("\n3.Exponential") +
-            ("\n4.Exit") ) 
+            ("\n4.Exit") )
         connection.send(str.encode(menu)) #send 1
-
         print("Waiting for client's option...")
-        op = connection.recv(2048) #recv 2
-        op = op.decode(FORMAT)  
-        choice = str(op)
-        
-        if choice in ('1', '2', '3'):
 
-            first = "\nEnter a number: "
-            connection.send(str.encode(first)) #send 3
+        try:
+            
+            op = connection.recv(SIZE) #recv 2
+            op = op.decode(FORMAT)
+            choice = str(op)
 
-            fnum = connection.recv(2048)
+            fnum = connection.recv(SIZE)
             num1 = float(fnum.decode(FORMAT))
 
             if choice == '1':
-                myfloat = log(num1)
-                mystring = "Log value:"
-                ans = mystring + str(myfloat)
-                connection.send(str.encode(ans))
-                print("Done")
+                ans = log(num1)
+                mystring = "Log value"
 
             elif choice == '2':
-                myfloat = sqrt(num1)
-                mystring = "The square root: "
-                ans = mystring + str(myfloat)
-                connection.send(str.encode(ans))
-                print("Done")
-            
+                ans = sqrt(num1)
+                mystring = "The square root"
+
             elif choice == '3':
-                myfloat = exp(num1)
-                mystring = "Exponential: "
-                ans = mystring + str(myfloat)
-                connection.send(str.encode(ans))      
-                print("Done")        
-        
-        else:
-            exit = 'Thank you'
-            connection.send(str.encode(exit))
-            print(f'[+] {address} Client Disconnected')
-            sys.exit()
+                ans = exp(num1)
+                mystring = "Exponential"
+
+            myans = (str(mystring) + ' = ' + str(ans))
+            print ('Done!')
+
+        except:
+            #ans = 'Thank you'
+            #connection.send(str.encode(exit))
+            print(f'[+] {s_addr} Client Disconnected')
             
 
-while True:
-    Client, address = ServerSideSocket.accept()
-    print('Connected to: ' + address[0] + ':' + str(address[1]))
-    start_new_thread(multi_threaded_client, (Client, ))
-    ThreadCount += 1
-    print('Thread Number: ' + str(ThreadCount))
+        if not choice:
+            break
 
-ServerSideSocket.close()
+        connection.send(str.encode(myans))
+
+    connection.close()
+
+if __name__ == '__main__':
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(("",2004))                                   
+    print("waiting...")
+    s.listen(5)                                         
+    
+    try:
+        while True:
+            try:
+                connection, s_addr = s.accept()
+                p = Process(target=start_process, args=(connection,))
+                p.start()
+
+            except socket.error:
+
+                print('socket error!')
+
+            except Exception as e:        
+                print("an exception occurred!")
+                print(e)
+                sys.exit(1)
+    finally:
+     	   s.close()
