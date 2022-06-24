@@ -1,6 +1,7 @@
 import socket
 import sys
 FORMAT = "utf-8"
+SIZE = 2048
 
 ClientMultiSocket = socket.socket()
 host = '192.168.125.3'
@@ -15,36 +16,25 @@ res = ClientMultiSocket.recv(2048)
 
 while True:
     try:
-        mainmenu=ClientMultiSocket.recv(2048)   #recv 1
+        mainmenu=ClientMultiSocket.recv(SIZE)   #recv 1
         print(mainmenu.decode(FORMAT))
 
         Input = input('\nChoose mathematical function: ') #option
         ClientMultiSocket.send(str.encode(Input)) #send 2
-        
-        first = ClientMultiSocket.recv(2048) #recv 3
-        print(first.decode(FORMAT))
-        fnum = input()
-        ClientMultiSocket.send(str.encode(fnum))
-
-        if Input == '1':
-            ans = ClientMultiSocket.recv(2048)
-            print(ans.decode(FORMAT))
-
-        if Input == '2':
-            ans = ClientMultiSocket.recv(2048)
-            print(ans.decode(FORMAT))
-
-        if Input == '3':
-            ans = ClientMultiSocket.recv(2048)
-            print(ans.decode(FORMAT))            
 
         if Input == '4':
-            exit = ClientMultiSocket.recv(2048).decode(FORMAT)
-            print(exit)
-            sys.exit()
+            break
+        else:
+
+            fnum =input('Enter a number: ')
+            ClientMultiSocket.send(str.encode(fnum)) #number
+
+            ans = ClientMultiSocket.recv(SIZE)
+            print(ans.decode(FORMAT))
 
     except KeyboardInterrupt:
         print('\nCtrl + C is pressed, Lost Connection')
         sys.exit()
 
 ClientMultiSocket.close()
+
